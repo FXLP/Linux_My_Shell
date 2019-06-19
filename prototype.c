@@ -10,7 +10,7 @@
 //history and mouse
 #include<readline/readline.h>
 #include<readline/history.h>
-//test
+//test zhr
 #define normal			0  /* 一般的命令 */
 #define out_redirect	1  /* 输出重定向 */
 #define in_redirect		2  /* 输入重定向 */
