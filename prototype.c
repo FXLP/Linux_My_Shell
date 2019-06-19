@@ -4,13 +4,14 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <dirent.h>
 //history and mouse
 #include<readline/readline.h>
 #include<readline/history.h>
-//test
+//zhr
 #define normal			0  /* 一般的命令 */
 #define out_redirect	1  /* 输出重定向 */
 #define in_redirect		2  /* 输入重定向 */
@@ -249,16 +250,21 @@ void do_cmd(int argcount, char arglist[100][256])
 			/* pid为0说明是子进程，在子进程中执行输入的命令 */
 			/* 输入的命令中不含>、<和| */
 			if (pid == 0) {
+				printf("debug:\n%s",arg[0]);
 				if ( !(find_command(arg[0])) ) {
 					printf("%s : command not found\n", arg[0]);
-					exit (0);
+					exit(0);
 				}
 				execvp(arg[0], arg);
 				exit(0);
 			}
 			else
 			{
-					if(strcmp(arg[0],"cd")==0){
+				if(strcmp(arg[0],"kill")==0){
+					printf("debug");
+					kill(arg[1],SIGKILL);
+				}
+				if(strcmp(arg[0],"cd")==0){
 					/*
 					for(i=0;arg[i]!=NULL;i++){
 						printf("now arg[i]:%d\n",i);
