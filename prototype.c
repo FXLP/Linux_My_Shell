@@ -11,17 +11,17 @@
 #include<readline/readline.h>
 #include<readline/history.h>
 
-#define normal			0  /* Ò»°ãµÄÃüÁî */
-#define out_redirect	1  /* Êä³öÖØ¶¨Ïò */
-#define in_redirect		2  /* ÊäÈëÖØ¶¨Ïò */
-#define have_pipe		3  /* ÃüÁîÖĞÓĞ¹ÜµÀ */
+#define normal			0  /* ä¸€èˆ¬çš„å‘½ä»¤ */
+#define out_redirect	1  /* è¾“å‡ºé‡å®šå‘ */
+#define in_redirect		2  /* è¾“å…¥é‡å®šå‘ */
+#define have_pipe		3  /* å‘½ä»¤ä¸­æœ‰ç®¡é“ */
 
-void print_prompt();						/* ´òÓ¡ÌáÊ¾·û */
-int get_input(char *);						/* µÃµ½ÊäÈëµÄÃüÁî */
-//¶şÎ¬Êı×é×÷ÎªĞÎ²Î£¬±ØĞëÖ¸Ã÷ÁĞµÄÊı×Ö
-void explain_input(char *, int *, char a[ ][256]);		/* ¶ÔÊäÈëÃüÁî½øĞĞ½âÎö */
-void do_cmd(int, char a[ ][256]);					/* Ö´ĞĞÃüÁî */
-int  find_command(char *);					/* ²éÕÒÃüÁîÖĞµÄ¿ÉÖ´ĞĞ³ÌĞò */
+void print_prompt();						/* æ‰“å°æç¤ºç¬¦ */
+int get_input(char *);						/* å¾—åˆ°è¾“å…¥çš„å‘½ä»¤ */
+//äºŒç»´æ•°ç»„ä½œä¸ºå½¢å‚ï¼Œå¿…é¡»æŒ‡æ˜åˆ—çš„æ•°å­—
+void explain_input(char *, int *, char a[ ][256]);		/* å¯¹è¾“å…¥å‘½ä»¤è¿›è¡Œè§£æ */
+void do_cmd(int, char a[ ][256]);					/* æ‰§è¡Œå‘½ä»¤ */
+int  find_command(char *);					/* æŸ¥æ‰¾å‘½ä»¤ä¸­çš„å¯æ‰§è¡Œç¨‹åº */
 char now[1024];	//now dir
 
 int main(int argc, char **argv)
@@ -39,13 +39,13 @@ int main(int argc, char **argv)
 	}
 
 	while(1) {
-		/* ½«bufËùÖ¸ÏòµÄ¿Õ¼äÇåÁã */
+		/* å°†bufæ‰€æŒ‡å‘çš„ç©ºé—´æ¸…é›¶ */
 		memset(buf, 0, 256);
 		print_prompt();
 
 		get_input(buf); //readin
 
-		/* ÈôÊäÈëµÄÃüÁîÎªexit»òlogoutÔòÍË³ö±¾³ÌĞò */
+		/* è‹¥è¾“å…¥çš„å‘½ä»¤ä¸ºexitæˆ–logoutåˆ™é€€å‡ºæœ¬ç¨‹åº */
 		if( strcmp(buf,"exit\n") == 0 || strcmp(buf,"logout\n") == 0 )
 			break;
 		for (i=0; i < 100; i++)
@@ -86,7 +86,7 @@ void print_prompt()
 
 // 	if(len == 256) {
 // 		printf("command is too long \n");
-// 		exit(-1); //ÊäÈëµÄÃüÁî¹ı³¤ÔòÍË³ö³ÌĞò
+// 		exit(-1); //è¾“å…¥çš„å‘½ä»¤è¿‡é•¿åˆ™é€€å‡ºç¨‹åº
 // 	}
 
 // 	buf[len] = '\n';
@@ -114,8 +114,8 @@ int get_input(char *buf)
 }
 
 
-/* ½âÎöbufÖĞµÄÃüÁî£¬½«½á¹û´æÈëarglistÖĞ£¬ÃüÁîÒÔ»Ø³µ·ûºÅ\n½áÊø */
-/* ÀıÈçÊäÈëÃüÁîÎª"ls -l /tmp"£¬Ôòarglist[0]¡¢arglist[1]¡¢arglsit[2]·Ö±ğÎªls¡¢-lºÍ/tmp */
+/* è§£æbufä¸­çš„å‘½ä»¤ï¼Œå°†ç»“æœå­˜å…¥arglistä¸­ï¼Œå‘½ä»¤ä»¥å›è½¦ç¬¦å·\nç»“æŸ */
+/* ä¾‹å¦‚è¾“å…¥å‘½ä»¤ä¸º"ls -l /tmp"ï¼Œåˆ™arglist[0]ã€arglist[1]ã€arglsit[2]åˆ†åˆ«ä¸ºlsã€-lå’Œ/tmp */
 void explain_input(char *buf, int *argcount, char arglist[100][256])
 {
 	char	*p	= buf;
@@ -146,8 +146,8 @@ void explain_input(char *buf, int *argcount, char arglist[100][256])
 void do_cmd(int argcount, char arglist[100][256])
 {
 	int	flag = 0;
-	int	how = 0;        /* ÓÃÓÚÖ¸Ê¾ÃüÁîÖĞÊÇ·ñº¬ÓĞ>¡¢<¡¢|   */
-	int	background = 0; /* ±êÊ¶ÃüÁîÖĞÊÇ·ñÓĞºóÌ¨ÔËĞĞ±êÊ¶·û& */
+	int	how = 0;        /* ç”¨äºæŒ‡ç¤ºå‘½ä»¤ä¸­æ˜¯å¦å«æœ‰>ã€<ã€|   */
+	int	background = 0; /* æ ‡è¯†å‘½ä»¤ä¸­æ˜¯å¦æœ‰åå°è¿è¡Œæ ‡è¯†ç¬¦& */
 	int	status;
 	int	i;
 	int	fd;
@@ -156,13 +156,13 @@ void do_cmd(int argcount, char arglist[100][256])
 	char*	file;
 	pid_t	pid;
 
-	/*½«ÃüÁîÈ¡³ö*/
+	/*å°†å‘½ä»¤å–å‡º*/
 	for (i=0; i < argcount; i++) {
 		arg[i] = (char *) arglist[i];
 	}
 	arg[argcount] = NULL;
 
-	/*²é¿´ÃüÁîĞĞÊÇ·ñÓĞºóÌ¨ÔËĞĞ·û*/
+	/*æŸ¥çœ‹å‘½ä»¤è¡Œæ˜¯å¦æœ‰åå°è¿è¡Œç¬¦*/
 	for (i=0; i < argcount; i++) {
 		if (strncmp(arg[i], "&",1) == 0) {
 			if (i == argcount-1) {
@@ -199,14 +199,14 @@ void do_cmd(int argcount, char arglist[100][256])
 				flag++;
 		}
 	}
-	/* flag´óÓÚ1£¬ËµÃ÷ÃüÁîÖĞº¬ÓĞ¶à¸ö> ,<,|·ûºÅ£¬±¾³ÌĞòÊÇ²»Ö§³ÖÕâÑùµÄÃüÁîµÄ
-	   »òÕßÃüÁî¸ñÊ½²»¶Ô£¬Èç"ls £­l /tmp >" */
+	/* flagå¤§äº1ï¼Œè¯´æ˜å‘½ä»¤ä¸­å«æœ‰å¤šä¸ª> ,<,|ç¬¦å·ï¼Œæœ¬ç¨‹åºæ˜¯ä¸æ”¯æŒè¿™æ ·çš„å‘½ä»¤çš„
+	   æˆ–è€…å‘½ä»¤æ ¼å¼ä¸å¯¹ï¼Œå¦‚"ls ï¼l /tmp >" */
 	if (flag > 1) {
 		printf("wrong command\n");
 		return;
 	}
 
-	if (how == out_redirect) {  /*ÃüÁîÖ»º¬ÓĞÒ»¸öÊä³öÖØ¶¨Ïò·ûºÅ> */
+	if (how == out_redirect) {  /*å‘½ä»¤åªå«æœ‰ä¸€ä¸ªè¾“å‡ºé‡å®šå‘ç¬¦å·> */
 		for (i=0; arg[i] != NULL; i++) {
 			if (strcmp(arg[i],">")==0) {
 				file   = arg[i+1];
@@ -215,7 +215,7 @@ void do_cmd(int argcount, char arglist[100][256])
 		}
 	}
 
-	if (how == in_redirect) {    /*ÃüÁîÖ»º¬ÓĞÒ»¸öÊäÈëÖØ¶¨Ïò·ûºÅ< */
+	if (how == in_redirect) {    /*å‘½ä»¤åªå«æœ‰ä¸€ä¸ªè¾“å…¥é‡å®šå‘ç¬¦å·< */
 		for (i=0; arg[i] != NULL; i++) {
 			if (strcmp (arg[i],"<") == 0) {
 				file   = arg[i+1];
@@ -224,8 +224,8 @@ void do_cmd(int argcount, char arglist[100][256])
 		}
 	}
 
-	if (how == have_pipe) {  /* ÃüÁîÖ»º¬ÓĞÒ»¸ö¹ÜµÀ·ûºÅ| */
-/* °Ñ¹ÜµÀ·ûºÅºóÃÅµÄ²¿·Ö´æÈëargnextÖĞ£¬¹ÜµÀºóÃæµÄ²¿·ÖÊÇÒ»¸ö¿ÉÖ´ĞĞµÄshellÃüÁî */
+	if (how == have_pipe) {  /* å‘½ä»¤åªå«æœ‰ä¸€ä¸ªç®¡é“ç¬¦å·| */
+/* æŠŠç®¡é“ç¬¦å·åé—¨çš„éƒ¨åˆ†å­˜å…¥argnextä¸­ï¼Œç®¡é“åé¢çš„éƒ¨åˆ†æ˜¯ä¸€ä¸ªå¯æ‰§è¡Œçš„shellå‘½ä»¤ */
 		for (i=0; arg[i] != NULL; i++) {
 			if (strcmp(arg[i],"|")==0) {
 				arg[i] = NULL;
@@ -246,8 +246,8 @@ void do_cmd(int argcount, char arglist[100][256])
 
 	switch(how) {
 		case 0:
-			/* pidÎª0ËµÃ÷ÊÇ×Ó½ø³Ì£¬ÔÚ×Ó½ø³ÌÖĞÖ´ĞĞÊäÈëµÄÃüÁî */
-			/* ÊäÈëµÄÃüÁîÖĞ²»º¬>¡¢<ºÍ| */
+			/* pidä¸º0è¯´æ˜æ˜¯å­è¿›ç¨‹ï¼Œåœ¨å­è¿›ç¨‹ä¸­æ‰§è¡Œè¾“å…¥çš„å‘½ä»¤ */
+			/* è¾“å…¥çš„å‘½ä»¤ä¸­ä¸å«>ã€<å’Œ| */
 			if (pid == 0) {
 				if ( !(find_command(arg[0])) ) {
 					printf("%s : command not found\n", arg[0]);
@@ -270,7 +270,7 @@ void do_cmd(int argcount, char arglist[100][256])
 			}
 			break;
 		case 1:
-			/* ÊäÈëµÄÃüÁîÖĞº¬ÓĞÊä³öÖØ¶¨Ïò·û> */
+			/* è¾“å…¥çš„å‘½ä»¤ä¸­å«æœ‰è¾“å‡ºé‡å®šå‘ç¬¦> */
 			if (pid == 0) {
 				if ( !(find_command(arg[0])) ) {
 					printf("%s : command not found\n",arg[0]);
@@ -283,7 +283,7 @@ void do_cmd(int argcount, char arglist[100][256])
 			}
 			break;
 		case 2:
-			/* ÊäÈëµÄÃüÁîÖĞº¬ÓĞÊäÈëÖØ¶¨Ïò·û< */
+			/* è¾“å…¥çš„å‘½ä»¤ä¸­å«æœ‰è¾“å…¥é‡å®šå‘ç¬¦< */
 			if (pid == 0) {
 				if ( !(find_command (arg[0])) ) {
 					printf("%s : command not found\n",arg[0]);
@@ -296,7 +296,7 @@ void do_cmd(int argcount, char arglist[100][256])
 			}
 			break;
 		case 3:
-			/* ÊäÈëµÄÃüÁîÖĞº¬ÓĞ¹ÜµÀ·û| */
+			/* è¾“å…¥çš„å‘½ä»¤ä¸­å«æœ‰ç®¡é“ç¬¦| */
 			if(pid == 0) {
 				int  pid2;
 				int  status2;
@@ -338,29 +338,29 @@ void do_cmd(int argcount, char arglist[100][256])
 			break;
 	}
 
-	/* ÈôÃüÁîÖĞÓĞ&£¬±íÊ¾ºóÌ¨Ö´ĞĞ£¬¸¸½ø³ÌÖ±½Ó·µ»Ø²»µÈ´ı×Ó½ø³Ì½áÊø */
+	/* è‹¥å‘½ä»¤ä¸­æœ‰&ï¼Œè¡¨ç¤ºåå°æ‰§è¡Œï¼Œçˆ¶è¿›ç¨‹ç›´æ¥è¿”å›ä¸ç­‰å¾…å­è¿›ç¨‹ç»“æŸ */
 	if ( background == 1 ) {
 		printf("[process id %d]\n",pid);
 		return ;
 	}
 
-	/* ¸¸½ø³ÌµÈ´ı×Ó½ø³Ì½áÊø */
+	/* çˆ¶è¿›ç¨‹ç­‰å¾…å­è¿›ç¨‹ç»“æŸ */
 	if (waitpid (pid, &status,0) == -1)
 		printf("wait for child process error\n");
 }
 
-/* ²éÕÒÃüÁîÖĞµÄ¿ÉÖ´ĞĞ³ÌĞò */
+/* æŸ¥æ‰¾å‘½ä»¤ä¸­çš„å¯æ‰§è¡Œç¨‹åº */
 int find_command (char *command)
 {
 	DIR*             dp;
 	struct dirent*   dirp;
 	char*			 path[] = { "./", "/bin", "/usr/bin", NULL};
 
-	/* Ê¹µ±Ç°Ä¿Â¼ÏÂµÄ³ÌĞò¿ÉÒÔ±»ÔËĞĞ£¬ÈçÃüÁî"./fork"¿ÉÒÔ±»ÕıÈ·½âÊÍºÍÖ´ĞĞ */
+	/* ä½¿å½“å‰ç›®å½•ä¸‹çš„ç¨‹åºå¯ä»¥è¢«è¿è¡Œï¼Œå¦‚å‘½ä»¤"./fork"å¯ä»¥è¢«æ­£ç¡®è§£é‡Šå’Œæ‰§è¡Œ */
 	if( strncmp(command,"./",2) == 0 )
 		command = command + 2;
 
-	/* ·Ö±ğÔÚµ±Ç°Ä¿Â¼¡¢/binºÍ/usr/binÄ¿Â¼²éÕÒÒª¿ÉÖ´ĞĞ³ÌĞò */
+	/* åˆ†åˆ«åœ¨å½“å‰ç›®å½•ã€/binå’Œ/usr/binç›®å½•æŸ¥æ‰¾è¦å¯æ‰§è¡Œç¨‹åº */
 	int i = 0;
 	while (path[i] != NULL) {
 		if ( (dp = opendir(path[i]) ) == NULL)
