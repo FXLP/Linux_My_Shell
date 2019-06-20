@@ -36,11 +36,7 @@ int get_input(char* buff)
     tmp = readline(" ");
     if(strlen(tmp)!=0){
         add_history(tmp); // need to refactory for no '\n' cases
-        int i;int len = strlen(tmp);
-        char max[len+1];
-        for(i=0;i<len;i++) max[i] = tmp[i];
-        max[len] = '\n';
-        strcpy(buff,max);
+        strcpy(buff,tmp);
         return 1;
     }
     else{
@@ -50,16 +46,7 @@ int get_input(char* buff)
 
 bool endcheck(char* buff) //need to refactory for no '\n' cases
 {
-    char* now = NULL;
-    int len = strlen(buff);
-    len--;
-    now = (char*) malloc(len * sizeof(char));
-    int i;
-    for(i=0;i<=len;i++){
-        now[i] = buff[i];
-        if(i==len) now[i] = '\0';
-    }
-    if(!strcmp(now,"exit")||!strcmp(now,"logout")) return true;
+    if(!strcmp(buff,"exit")||!strcmp(buff,"logout")) return true;
     return false;
 }
 
