@@ -12,7 +12,7 @@
 //history and mouse
 #include<readline/readline.h>
 #include<readline/history.h>
-
+//test
 #define NORMAL 0 //build_in and execvp
 #define OUTREDIRECT 1 //with '>'
 #define INREDIRECT 2 //with '<'
