@@ -35,7 +35,7 @@ int get_input(char* buff)
     char* tmp;
     tmp = readline(" ");
     if(strlen(tmp)!=0){
-        add_history(tmp);
+        add_history(tmp); // need to refactory for no '\n' cases
         int i;int len = strlen(tmp);
         char max[len+1];
         for(i=0;i<len;i++) max[i] = tmp[i];
@@ -48,7 +48,7 @@ int get_input(char* buff)
     }
 }
 
-bool endcheck(char* buff)
+bool endcheck(char* buff) //need to refactory for no '\n' cases
 {
     char* now = NULL;
     int len = strlen(buff);
