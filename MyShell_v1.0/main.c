@@ -157,38 +157,62 @@ void cmd_control(int childCnt,struct childcmd* child)
         int outredir=0;
         int status;
         int fd;
-        if(error){
-            printf("Wrong Command!\n");
-            break;
-        }
         int j=0;
         argcnt = child[i].childCnt;
         char* arg[argcnt+1];
         char* argnext[argcnt+1];
-        char* file;
+        char* outfile;
+        char* infile;
         for(j=0;j<argcnt;j++){
             arg[j] = (char*) child[i].childList[j]; 
         }
         arg[argcnt] = NULL;
         for(j=0;arg[j]!=NULL;j++){
-            if(error) break;
             if(strcmp(arg[j],">")==0){
-                outredir++;
+                outredir = j;
                 if(arg[j+1]==NULL) error=1;
-                if(outredir > 1) error=1;
+                if(outredir!=0) error=1;
             }
             if(strcmp(arg[j],"<")==0){
-                inredir = 1;
+                inredir = j;
                 if(j==0) error=1;
-                if(inredir > 1) error=1;
+                if(inredir!=0) error=1;
             }
             if(strcmp(arg[j],"|")==0){
-                piped++;
-                if(piped > 1) error=1;
+                piped = j;
+                if(piped!=0) error=1;
                 if(j==0) error=1;
                 if(arg[j+1]==NULL) error=1;
             }
+            if(error) break;
         }
+        if(error){
+            printf("Wrong Command!\n");
+            break;
+        }
+        if(outredir != 0){
+            outfile = arg[outredir+1];
+            arg[outredir] = NULL;
+        }
+        if(inredir != 0){
+            infile = arg[inredir+1];
+            arg[inredir] = NULL;
+        }
+        if(piped != 0){
+            arg[piped] = NULL;
+            for(j=piped+1;j<argcnt;j++){
+                argnext[j-piped-1] = arg[j];
+            }
+            argnext[argcnt-piped-1] = NULL;
+        }
+        if((pid = fork()) < 0){
+            printf("fork error!");
+            return ;
+        }
+        if(piped){
+            //exec piped cmd
+        }
+        
     }
 }
 
