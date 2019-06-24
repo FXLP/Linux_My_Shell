@@ -145,7 +145,7 @@ void explain_input(char *buf, int *argcount, char arglist[100][256])
 }
 
 void do_cmd(int argcount, char arglist[100][256])
-{
+{	00
 	int	flag = 0;
 	int	how = 0;        /* 用于指示命令中是否含有>、<、|   */
 	int	background = 0; /* 标识命令中是否有后台运行标识符& */
@@ -172,7 +172,7 @@ void do_cmd(int argcount, char arglist[100][256])
 				break;
 			}
 			else {
-				printf("wrong command\n");
+				printf("wrong command错误指令\n");
 				return ;
 			}
 		}
