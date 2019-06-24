@@ -146,17 +146,49 @@ int split_cmd(int argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
 
 }
 
-void do_cmd(int childCnt,struct childcmd* child)
+void cmd_control(int childCnt,struct childcmd* child)
 {
-    int i,lastCnt;
+    int i;
+    int error=0;
     for(i=0;i<childCnt;i++){
-        printf("This is child[%d] with\n",i);
-        printf("childCnt = %d\n",child[i].childCnt);
-        for(lastCnt=0;lastCnt<child[i].childCnt;lastCnt++){
-            printf("childList[%d]=%s\n",lastCnt,child[i].childList[lastCnt]);
+        int argcnt;
+        int piped=0;
+        int inredir=0;
+        int outredir=0;
+        int status;
+        int fd;
+        if(error){
+            printf("Wrong Command!\n");
+            break;
         }
-        printf("background=%d\n",child[i].background);
-        puts("");
+        int j=0;
+        argcnt = child[i].childCnt;
+        char* arg[argcnt+1];
+        char* argnext[argcnt+1];
+        char* file;
+        for(j=0;j<argcnt;j++){
+            arg[j] = (char*) child[i].childList[j]; 
+        }
+        arg[argcnt] = NULL;
+        for(j=0;arg[j]!=NULL;j++){
+            if(error) break;
+            if(strcmp(arg[j],">")==0){
+                outredir++;
+                if(arg[j+1]==NULL) error=1;
+                if(outredir > 1) error=1;
+            }
+            if(strcmp(arg[j],"<")==0){
+                inredir = 1;
+                if(j==0) error=1;
+                if(inredir > 1) error=1;
+            }
+            if(strcmp(arg[j],"|")==0){
+                piped++;
+                if(piped > 1) error=1;
+                if(j==0) error=1;
+                if(arg[j+1]==NULL) error=1;
+            }
+        }
     }
 }
 
@@ -194,7 +226,8 @@ int main(int argc,char** argv)
         //puts(buff);//debug
 
         childCnt = split_cmd(argCnt,argList);
-        do_cmd(childCnt,child);
+        //do_cmd(childCnt,child);
+        cmd_control(childCnt,child);
     }
     return 0;
 }
