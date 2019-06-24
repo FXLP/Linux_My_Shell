@@ -22,6 +22,14 @@
 #define MAXCMDLENGTH 256
 #define MAXARGLENGTH 128
 
+struct childcmd
+{
+    int childCnt;
+    char childList[MAXARGLENGTH][MAXCMDLENGTH];
+    int background;
+}child[MAXCMDLENGTH];
+
+
 void init_print()
 {
     int maxlen = MAXDIRLENGTH * sizeof(char);
@@ -78,11 +86,86 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
     return ;
 }
 
+int split_cmd(int argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
+{
+    int i;
+    int cnt = 0;
+    int lastCnt = 0;
+    //struct childcmd child[MAXCMDLENGTH];
+    char* arg[argCnt+1];
+    for(i=0;i<=argCnt;i++){
+        if(i==argCnt) arg[i]=NULL;
+        else{
+            arg[i] = (char*) argList[i];
+        }
+    }
+    
+    //for(i=0;i<argCnt;i++) printf("argList[%d]=%s\n",i,arg[i]);
+    for(i=0;i<=argCnt;i++){
+        if(i == argCnt){
+            int j;
+            if((i-lastCnt)==0) break;
+            child[cnt].childCnt = i - lastCnt;
+            child[cnt].background = 0;
+            for(j=0;j< i-lastCnt;j++){
+                memset(child[cnt].childList[j],'\0',sizeof(child[cnt].childList[j]));
+                strcpy(child[cnt].childList[j],arg[lastCnt+j]);
+            }
+            cnt++;
+            break;
+        }
+        if(strncmp(arg[i],"&",1)==0){
+            int j,num;
+            num = i - lastCnt;
+            if(num==0){
+                lastCnt = i+1;
+                continue;
+            }
+            child[cnt].childCnt = num;
+            child[cnt].background = 1;
+            for(j=0;j<num;j++){
+                memset(child[cnt].childList[j],'\0',sizeof(child[cnt].childList[j]));
+                strcpy(child[cnt].childList[j],arg[lastCnt+j]);
+            }
+            lastCnt = i+1;
+            cnt++;
+            continue;
+        }
+    }
+    return cnt;
+    //debug
+    // for(i=0;i<cnt;i++){
+    //     printf("This is child[%d] with\n",i);
+    //     printf("childCnt = %d\n",child[i].childCnt);
+    //     for(lastCnt=0;lastCnt<child[i].childCnt;lastCnt++){
+    //         printf("childList[%d]=%s\n",lastCnt,child[i].childList[lastCnt]);
+    //     }
+    //     printf("background=%d\n",child[i].background);
+    //     puts("");
+    // }
+
+}
+
+void do_cmd(int childCnt,struct childcmd* child)
+{
+    int i,lastCnt;
+    for(i=0;i<childCnt;i++){
+        printf("This is child[%d] with\n",i);
+        printf("childCnt = %d\n",child[i].childCnt);
+        for(lastCnt=0;lastCnt<child[i].childCnt;lastCnt++){
+            printf("childList[%d]=%s\n",lastCnt,child[i].childList[lastCnt]);
+        }
+        printf("background=%d\n",child[i].background);
+        puts("");
+    }
+}
+
 int main(int argc,char** argv)
 {
     int buflen = MAXCMDLENGTH * sizeof(char);
     int InputNULLFlag,i;
     int argCnt = 0;
+    int childCnt = 0;
     char argList[MAXARGLENGTH][MAXCMDLENGTH];
     char* buff = (char*)malloc(buflen);
     if(buff == NULL){
@@ -109,6 +192,9 @@ int main(int argc,char** argv)
         //now argCnt shows how many args in the command
         //now argList[i] with %s shows what args is
         //puts(buff);//debug
+
+        childCnt = split_cmd(argCnt,argList);
+        do_cmd(childCnt,child);
     }
     return 0;
 }
