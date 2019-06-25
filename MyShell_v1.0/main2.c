@@ -81,6 +81,11 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
     return ;
 }
 
+void killfun(int sig){
+	int status;
+	wait(&status);
+	return;
+}
 
 void do_cmd(int argcount, char arglist[100][256])
 {
@@ -196,11 +201,17 @@ void do_cmd(int argcount, char arglist[100][256])
 				execvp(arg[0], arg);
 				exit(0);
 			}
-			else
+			else//built_in cmd
 			{
+				//check arg[0] == alias or unalias
+
+				//check arg[0] == history
+
+				
 				if(strcmp(arg[0],"kill")==0){
 					//printf("debug");
 					kill(arg[1],SIGKILL);
+					signal(17,killfun);
 				}
 				if(strcmp(arg[0],"cd")==0){
 					chdir(arg[1]);
@@ -341,7 +352,11 @@ int main(int argc,char** argv)
 
         InputNULLFlag = get_input(buff);
         if(!InputNULLFlag) continue;//while input is NULL continue
-        
+
+		//add buff into history file
+
+		//check buff => alias file if has replace
+
         if(endcheck(buff)) break;//exit and logout remember include <stdbool.h>
         
         prasing_space(buff,&argCnt,argList);
