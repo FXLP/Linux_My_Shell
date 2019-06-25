@@ -53,6 +53,7 @@ bool endcheck(char* buff)
 
 void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
 {
+	int packflag = 0;
     int header = 0,tailer = 0;
     int number = 0;
     int len = strlen(buff);
@@ -60,12 +61,28 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
         if(header >= len) break;
         if(buff[header]==' ') header++;
         else{
+			if(buff[header]=='='){
+				header++;
+				continue;
+			}
+			if(buff[header]=='\''){
+				packflag = 1;
+				header++;
+				continue;
+			}
             tailer = header;
             number = 0;
-            while((buff[tailer]!=' ')&&(buff[tailer]!='\n')&&(tailer < len)){
+            while(!packflag&&(buff[tailer]!=' ')&&(buff[tailer]!='\n')&&(tailer < len)&&(buff[tailer]!='=')){
                 number++;
                 tailer++;
             }
+			if(packflag){
+				while(buff[tailer]!='\''){
+					number++;tailer++;
+				}
+				packflag = 0;
+				tailer++;
+			}
             int iter;
             for(iter=0;iter<=number;iter++){
                 if(iter == number){
@@ -78,6 +95,10 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
             header = tailer;
         }
     }
+	// for(number=0;number<*argCnt;number++){
+	// 	printf("argList[%d]=%s\n",number,argList[number]);
+	// }
+	// puts(" ");
     return ;
 }
 
@@ -194,6 +215,9 @@ void do_cmd(int argcount, char arglist[100][256])
 			/* 输入的命令中不含>、<和| */
 			if (pid == 0) {
 				//printf("debug:\n%s",arg[0]);
+				if(strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0){
+					exit(0);
+				}
 				if ( !(find_command(arg[0])) ) {
 					printf("%s : command not found\n", arg[0]);
 					exit(0);
@@ -204,9 +228,25 @@ void do_cmd(int argcount, char arglist[100][256])
 			else//built_in cmd
 			{
 				//check arg[0] == alias or unalias
-
+				if(strcmp(arg[0],"alias")==0){
+					char name[MAXARGLENGTH];
+					char full[MAXCMDLENGTH];
+					int i;
+					for(i=0;i<strlen(arg[1]))
+				}
 				//check arg[0] == history
-
+				if(strcmp(arg[0],"history")==0){
+					char* hispath = "/tmp/historyfile";
+					FILE* fp = fopen(hispath,"r");
+					char out[100];
+					memset(out,'\0',sizeof(out));
+					int cnt = 0;
+					fscanf(fp,"%s",out);
+					while(!feof(fp)){
+						printf("%d\t%s\n",cnt++,out);
+						fscanf(fp,"%s",out);
+					}
+				}
 				
 				if(strcmp(arg[0],"kill")==0){
 					//printf("debug");
@@ -327,6 +367,23 @@ int find_command (char *command)
 	return 0;
 }
 
+void add_to_my_history(char* buff,int fp){
+	int len = strlen(buff);
+	int i;
+	char in[len+1];
+	for(i=0;i<len;i++){
+		in[i] = buff[i];
+	}
+	in[len] = '\n';
+	write(fp,in,len+1);
+}
+
+void alias(char* buff,int fp){
+	// puts(buff);
+	// printf("%d\n",fp);
+	return;
+}
+
 int main(int argc,char** argv)
 {
     int buflen = MAXCMDLENGTH * sizeof(char);
@@ -335,15 +392,18 @@ int main(int argc,char** argv)
     int childCnt = 0;
     char argList[MAXARGLENGTH][MAXCMDLENGTH];
     char* buff = (char*)malloc(buflen);
+	char* history_path = "/tmp/historyfile";
+	char* alias_path = "/tmp/aliasfile";
     if(buff == NULL){
         perror("Buffer Malloc Failed ERROR!");
         exit(-1);
     }
-    memset(buff,0,buflen);//init_buff
-
+    memset(buff,'\0',buflen);//init_buff
+	int historyfp = open(history_path,O_RDWR|O_CREAT|O_TRUNC,0644);
+	int aliasfp = open(alias_path,O_RDWR|O_CREAT|O_TRUNC,0644);
     while(true)
     {
-        memset(buff,0,buflen);
+        memset(buff,'\0',buflen);
         for(argCnt = 0;argCnt<MAXARGLENGTH;argCnt++){
             argList[argCnt][0] = '\0';
         }
@@ -354,8 +414,9 @@ int main(int argc,char** argv)
         if(!InputNULLFlag) continue;//while input is NULL continue
 
 		//add buff into history file
-
+		add_to_my_history(buff,historyfp);
 		//check buff => alias file if has replace
+		alias(buff,aliasfp);
 
         if(endcheck(buff)) break;//exit and logout remember include <stdbool.h>
         
