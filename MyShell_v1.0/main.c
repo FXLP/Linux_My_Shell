@@ -25,7 +25,9 @@
 struct childcmd
 {
     int childCnt;
-    char childList[MAXARGLENGTH][MAXCMDLENGTH];
+    char childArgs[MAXARGLENGTH][MAXCMDLENGTH];
+    char childNext[MAXARGLENGTH][MAXCMDLENGTH];
+    int piped;
     int background;
 }child[MAXCMDLENGTH];
 
@@ -190,26 +192,30 @@ void cmd_control(int childCnt,struct childcmd* child)
             printf("Wrong Command!\n");
             break;
         }
-        if(outredir != 0){
-            outfile = arg[outredir+1];
-            arg[outredir] = NULL;
-        }
-        if(inredir != 0){
-            infile = arg[inredir+1];
-            arg[inredir] = NULL;
-        }
+        // if(outredir != 0){
+        //     outfile = arg[outredir+1];
+        //     arg[outredir] = NULL;
+        // }
+        // if(inredir != 0){
+        //     infile = arg[inredir+1];
+        //     arg[inredir] = NULL;
+        // }
         if(piped != 0){
             arg[piped] = NULL;
             for(j=piped+1;j<argcnt;j++){
                 argnext[j-piped-1] = arg[j];
             }
             argnext[argcnt-piped-1] = NULL;
+        }else{
+            
         }
-        if((pid = fork()) < 0){
-            printf("fork error!");
-            return ;
-        }
+        // if((pid = fork()) < 0){
+        //     printf("fork error!");
+        //     return ;
+        // }
+        // Child Pid exec into 
         if(piped){
+            //do_piped(char* arg[],char* argnext[])
             //exec piped cmd
         }
         
