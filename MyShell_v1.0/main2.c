@@ -61,18 +61,14 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
         if(header >= len) break;
         if(buff[header]==' ') header++;
         else{
-			if(buff[header]=='='){
-				header++;
-				continue;
-			}
-			if(buff[header]=='\''){
-				packflag = 1;
-				header++;
-				continue;
-			}
-            tailer = header;
+			tailer = header;
             number = 0;
-            while(!packflag&&(buff[tailer]!=' ')&&(buff[tailer]!='\n')&&(tailer < len)&&(buff[tailer]!='=')){
+            while(!packflag&&(buff[tailer]!=' ')&&(buff[tailer]!='\n')&&(tailer < len)){
+				if(buff[tailer]=='\''){
+					packflag=1;
+					number++;
+					tailer++;
+				}
                 number++;
                 tailer++;
             }
@@ -81,6 +77,7 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
 					number++;tailer++;
 				}
 				packflag = 0;
+				number++;
 				tailer++;
 			}
             int iter;
@@ -96,7 +93,8 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
         }
     }
 	// for(number=0;number<*argCnt;number++){
-	// 	printf("argList[%d]=%s\n",number,argList[number]);
+	// 	printf("argList[%d]=",number);
+	// 	puts(argList[number]);
 	// }
 	// puts(" ");
     return ;
@@ -229,10 +227,60 @@ void do_cmd(int argcount, char arglist[100][256])
 			{
 				//check arg[0] == alias or unalias
 				if(strcmp(arg[0],"alias")==0){
-					char name[MAXARGLENGTH];
+				//	puts("alias");
+					char cmd[MAXCMDLENGTH];
 					char full[MAXCMDLENGTH];
-					int i;
-					for(i=0;i<strlen(arg[1]))
+					char aliasbuff[MAXDIRLENGTH];
+					memset(aliasbuff,'\0',sizeof(aliasbuff));
+					memset(cmd,'\0',sizeof(cmd));
+					memset(full,'\0',sizeof(full));
+					int cnt;
+					for(cnt=0;arg[cnt]!=NULL;cnt++){
+						// printf("arg[%d]=",cnt);
+						// puts(arg[cnt]);
+					}
+					if(cnt == 1){//alias
+						char* aliaspath = "/tmp/aliasfile";
+						FILE* fp = fopen(aliaspath,"r");
+						int i;
+						// puts("init print");
+						// for(i=0;i<strlen(aliasbuff);i++){
+						// 	printf("%d ",aliasbuff[i]);
+						// }
+						// puts("init print end");
+						fgets(aliasbuff,MAXDIRLENGTH,fp);
+						while(!feof(fp)){
+							//printf("%s with len=%d\n",aliasbuff,sizeof(aliasbuff));
+							for(i=0;i<sizeof(aliasbuff);i++){
+								if(aliasbuff[i]=='\t'){
+									aliasbuff[i]='=';
+								}
+								if(aliasbuff[i]=='\n'){
+									aliasbuff[i]='\0';
+									break;
+								}
+							}
+							printf("%s\n",aliasbuff);
+							fgets(aliasbuff,MAXDIRLENGTH,fp);
+						}
+						// puts("alias end");
+					}
+					else if(cnt == 2){//alias cmd
+						int i=0,iter;
+						int flag = 0;
+						int len = strlen(arg[1]);
+						for(iter=0;iter<len;iter++){
+							if(!flag){
+								cmd[i++] = arg[1][iter];
+							}
+							if(arg[1][iter]=='=')
+						}
+					}else{
+						printf("Wrong Command usage:alias\nPerhaps you should delete useless space front or back of '='\n");
+					}
+				}
+				if(strcmp(arg[0],"unalias")==0){
+					puts("unalias");	
 				}
 				//check arg[0] == history
 				if(strcmp(arg[0],"history")==0){
@@ -400,7 +448,7 @@ int main(int argc,char** argv)
     }
     memset(buff,'\0',buflen);//init_buff
 	int historyfp = open(history_path,O_RDWR|O_CREAT|O_TRUNC,0644);
-	int aliasfp = open(alias_path,O_RDWR|O_CREAT|O_TRUNC,0644);
+	int aliasfp = open(alias_path,O_RDWR|O_CREAT,0644);
     while(true)
     {
         memset(buff,'\0',buflen);
