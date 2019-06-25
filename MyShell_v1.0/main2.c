@@ -264,6 +264,7 @@ void do_cmd(int argcount, char arglist[100][256])
 							fgets(aliasbuff,MAXDIRLENGTH,fp);
 						}
 						// puts("alias end");
+						// test commit
 					}
 					else if(cnt == 2){//alias cmd
 						int i=0,iter;
