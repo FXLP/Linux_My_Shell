@@ -106,7 +106,7 @@ void killfun(int sig){
 	return;
 }
 
-void do_cmd(int argcount, char arglist[100][256],int aliasfp)
+void do_cmd(int argcount, char arglist[100][256])
 {
 	int	flag = 0;
 	int	how = 0;        /* 用于指示命令中是否含有>、<、|   */
@@ -118,7 +118,7 @@ void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 	char*	argnext[argcount+1];
 	char*	file;
 	pid_t	pid;
-
+	char* alias_path = "/tmp/aliasfile";
 	/*将命令取出*/
 	for (i=0; i < argcount; i++) {
 		arg[i] = (char *) arglist[i];
@@ -213,7 +213,7 @@ void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 			/* 输入的命令中不含>、<和| */
 			if (pid == 0) {
 				//printf("debug:\n%s",arg[0]);
-				if(strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0 || strcmp(arg[0],"history")==0){
+				if(strcmp(arg[0],"help")==0 || strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0 || strcmp(arg[0],"history")==0){
 					exit(0);
 				}
 				if ( !(find_command(arg[0])) ) {
@@ -278,6 +278,7 @@ void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 						}
 						cmd[i+1] = '\0';
 						if(defineflag){
+							int aliasfp = open(alias_path,O_RDWR|O_APPEND,0644);
 							for(i=i+2,j=0;i<len;i++,j++){
 								if(arg[1][i]=='\''){
 									break;
@@ -298,16 +299,99 @@ void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 							}		
 							wb[i] = '\n';
 							write(aliasfp,wb,sumlen);
+							close(aliasfp);
 						}
-						else{
-							
+						else{// alias cmd to find is there cmd=full
+							int len = strlen(cmd);
+							int flag = 0;
+							int i;
+							char ri[MAXCMDLENGTH];
+							memset(ri,'\0',MAXCMDLENGTH);
+							char* aliaspath = "/tmp/aliasfile";
+							FILE* fp = fopen(aliaspath,"r");	
+							fgets(ri,MAXCMDLENGTH,fp);
+							while(!feof(fp)){
+								if(flag) break;
+								for(i=0;i<len;i++){
+									if(ri[i] == arg[1][i]){
+										continue;
+									}
+									else break;
+								}
+								if(i==len && ri[i]=='\t'){
+									int cnt = i+1;
+									flag=1;
+									printf("Find Alias %s=",arg[1]);
+									while(ri[cnt]!='\n'){
+										printf("%c",ri[cnt++]);
+									}
+									puts("");
+									break;
+								}
+								fgets(ri,MAXCMDLENGTH,fp);
+							}
+							if(!flag){
+								printf("Sorry there is no alias named %s\n",arg[1]);
+							}
 						}
 					}else{
 						printf("Wrong Command usage:alias\nPerhaps you should delete useless space front or back of '='\n");
 					}
 				}
 				if(strcmp(arg[0],"unalias")==0){
-					puts("unalias");	
+					//puts("unalias");
+					int i=0;
+					while(arg[i]!=NULL){
+						i++;
+					}
+					if(i>2){
+						printf("Wrong Command usage:unalias\nYou should only input alias name\n");
+					}else{
+						char* tmppath="/tmp/aliasfile_tmp";
+						int len = strlen(arg[1]);
+						int flag = 0;
+						char* aliasbuff[MAXCMDLENGTH];
+						memset(aliasbuff,'\0',MAXCMDLENGTH);
+						FILE* fp=fopen(alias_path,"r");
+						int tmp=open(tmppath,O_RDWR|O_CREAT|O_TRUNC,0644);
+						fgets(aliasbuff,MAXCMDLENGTH,fp);
+						while(!feof(fp)){
+							char now[MAXCMDLENGTH];
+							memset(now,'\0',MAXCMDLENGTH);
+							strcpy(now,aliasbuff);
+							for(i=0;i<len;i++){
+								if(arg[1][i]==now[i]){
+									continue;
+								}
+								else{
+									flag = 1;
+									break;
+								}
+							}
+							if(i==len && now[i]=='\t'){
+								fgets(aliasbuff,MAXCMDLENGTH,fp);
+								continue;
+							}
+							int cnt=0;
+							char in[MAXCMDLENGTH];
+							memset(in,'\0',MAXCMDLENGTH);
+							while(1){
+								in[cnt] = now[cnt];
+								cnt++;
+								if(now[cnt]=='\n') break;
+							}
+							write(tmp,now,cnt+1);
+							fgets(aliasbuff,MAXCMDLENGTH,fp);
+						}
+						fclose(fp);
+						close(tmp);
+						remove(alias_path);
+						rename(tmppath,alias_path);
+						if(!flag){
+							printf("Sorry do not find alias named %s\n",arg[1]);
+						}
+					}
+					
 				}
 				//check arg[0] == history
 				if(strcmp(arg[0],"history")==0){
@@ -336,6 +420,28 @@ void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 				}
 				if(strcmp(arg[0],"cd")==0){
 					chdir(arg[1]);
+				}
+
+				if(strcmp(arg[0],"help")==0){
+					printf("This shell has functions as list:\n");
+					printf("cd:\t\tChange Dir\n");
+					printf("ls:\t\tList\n");
+					printf("pwd:\t\tShow Current Working Dir\n");
+					printf("mkdir:\t\tMake A New Dir\n");
+					printf("rmdir:\t\tRemove Dir\n");
+					printf("rm:\t\tRemove Files Or Dir\n");
+					printf("cp:\t\tCopy File\n");
+					printf("echo:\t\tPrint Out Message\n");
+					printf("cat:\t\tPrint File To Screen\n");
+					printf("vi:\t\tUse VIM\n");
+					printf("cal:\t\tShow Calender\n");
+					printf("find:\t\tFind File\n");
+					printf("more:\t\tPrint File To Screen Page By Page\n");
+					printf("date:\t\tShow Date\n");
+					printf("alias:\t\tUse Alias To Naming Commands\n");
+					printf("history:\tShow History Commands\n");
+					printf("This Shell Only Supports ONE Redirectory or Pipe Symbol!\n");
+					printf("Have a nice day :)\n");
 				}
 			}
 			break;
@@ -477,7 +583,7 @@ void alias(char* buff){
 			}
 			else break;
 		}
-		if(i==buflen){//goon
+		if(i==buflen && aliasbuff[i]=='\t'){//goon
 			flag = 1;
 			int cnt = 0;
 			i++;
@@ -503,14 +609,12 @@ int main(int argc,char** argv)
     char argList[MAXARGLENGTH][MAXCMDLENGTH];
     char* buff = (char*)malloc(buflen);
 	char* history_path = "/tmp/historyfile";
-	char* alias_path = "/tmp/aliasfile";
     if(buff == NULL){
         perror("Buffer Malloc Failed ERROR!");
         exit(-1);
     }
     memset(buff,'\0',buflen);//init_buff
 	int historyfp = open(history_path,O_RDWR|O_CREAT|O_TRUNC,0644);
-	int aliasfp = open(alias_path,O_RDWR|O_APPEND,0644);
     while(true)
     {
         memset(buff,'\0',buflen);
@@ -532,7 +636,7 @@ int main(int argc,char** argv)
         
         prasing_space(buff,&argCnt,argList);
         
-        do_cmd(argCnt,argList,aliasfp);
+        do_cmd(argCnt,argList);
     }
     if(buff != NULL){
         free(buff);
