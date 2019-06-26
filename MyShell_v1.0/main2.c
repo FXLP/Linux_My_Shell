@@ -106,7 +106,7 @@ void killfun(int sig){
 	return;
 }
 
-void do_cmd(int argcount, char arglist[100][256])
+void do_cmd(int argcount, char arglist[100][256],int aliasfp)
 {
 	int	flag = 0;
 	int	how = 0;        /* 用于指示命令中是否含有>、<、|   */
@@ -213,7 +213,7 @@ void do_cmd(int argcount, char arglist[100][256])
 			/* 输入的命令中不含>、<和| */
 			if (pid == 0) {
 				//printf("debug:\n%s",arg[0]);
-				if(strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0){
+				if(strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0 || strcmp(arg[0],"history")==0){
 					exit(0);
 				}
 				if ( !(find_command(arg[0])) ) {
@@ -263,18 +263,44 @@ void do_cmd(int argcount, char arglist[100][256])
 							printf("%s\n",aliasbuff);
 							fgets(aliasbuff,MAXDIRLENGTH,fp);
 						}
-						// puts("alias end");
-						// test commit
 					}
 					else if(cnt == 2){//alias cmd
-						int i=0,iter;
+						int i,j;
+						int defineflag = 0;
 						int flag = 0;
 						int len = strlen(arg[1]);
-						for(iter=0;iter<len;iter++){
-							if(!flag){
-								cmd[i++] = arg[1][iter];
+						for(i=0;i<len;i++){
+							if(arg[1][i] == '='){
+								defineflag = 1;
+								break;
 							}
-							if(arg[1][iter]=='=')
+							cmd[i] = arg[1][i];
+						}
+						cmd[i+1] = '\0';
+						if(defineflag){
+							for(i=i+2,j=0;i<len;i++,j++){
+								if(arg[1][i]=='\''){
+									break;
+								}
+								full[j] = arg[1][i];
+							}
+							full[j+1]='\0';
+							int sumlen = strlen(cmd) + strlen(full) + 2;
+							char wb[sumlen];
+							memset(wb,'\0',sizeof(wb));
+							for(i=0;i<strlen(cmd);i++){
+								wb[i] = cmd[i];
+							}
+							wb[i] = '\t';
+							i++;
+							for(i,j=0;j<strlen(full);j++){
+								wb[i++] = full[j];
+							}		
+							wb[i] = '\n';
+							write(aliasfp,wb,sumlen);
+						}
+						else{
+							
 						}
 					}else{
 						printf("Wrong Command usage:alias\nPerhaps you should delete useless space front or back of '='\n");
@@ -287,13 +313,19 @@ void do_cmd(int argcount, char arglist[100][256])
 				if(strcmp(arg[0],"history")==0){
 					char* hispath = "/tmp/historyfile";
 					FILE* fp = fopen(hispath,"r");
+					int i;
 					char out[100];
 					memset(out,'\0',sizeof(out));
 					int cnt = 0;
-					fscanf(fp,"%s",out);
+					fgets(out,100,fp);
 					while(!feof(fp)){
+						for(i=0;i<100;i++){
+							if(out[i]=='\n'){
+								out[i] = '\0';
+							}
+						}
 						printf("%d\t%s\n",cnt++,out);
-						fscanf(fp,"%s",out);
+						fgets(out,100,fp);
 					}
 				}
 				
@@ -427,10 +459,39 @@ void add_to_my_history(char* buff,int fp){
 	write(fp,in,len+1);
 }
 
-void alias(char* buff,int fp){
-	// puts(buff);
-	// printf("%d\n",fp);
-	return;
+void alias(char* buff){
+	char* aliaspath = "/tmp/aliasfile";
+	FILE* fp = fopen(aliaspath,"r");
+	char aliasbuff[MAXCMDLENGTH];
+	char now[MAXCMDLENGTH];
+	memset(aliasbuff,'\0',MAXCMDLENGTH);
+	int i;
+	int buflen = strlen(buff);
+	int flag = 0;
+	fgets(aliasbuff,MAXDIRLENGTH,fp);
+	while(!feof(fp)){
+		if(flag) break;
+		for(i=0;i<buflen;i++){
+			if(buff[i] == aliasbuff[i]){
+				continue;
+			}
+			else break;
+		}
+		if(i==buflen){//goon
+			flag = 1;
+			int cnt = 0;
+			i++;
+			memset(now,'\0',MAXCMDLENGTH);
+			while(aliasbuff[i]!='\n'){
+				now[cnt++] = aliasbuff[i];
+				i++;
+			}
+			now[cnt+1]='\0';
+			break;
+		}
+		fgets(aliasbuff,MAXDIRLENGTH,fp);
+	}
+	if(flag) strcpy(buff,now);
 }
 
 int main(int argc,char** argv)
@@ -449,7 +510,7 @@ int main(int argc,char** argv)
     }
     memset(buff,'\0',buflen);//init_buff
 	int historyfp = open(history_path,O_RDWR|O_CREAT|O_TRUNC,0644);
-	int aliasfp = open(alias_path,O_RDWR|O_CREAT,0644);
+	int aliasfp = open(alias_path,O_RDWR|O_APPEND,0644);
     while(true)
     {
         memset(buff,'\0',buflen);
@@ -465,13 +526,13 @@ int main(int argc,char** argv)
 		//add buff into history file
 		add_to_my_history(buff,historyfp);
 		//check buff => alias file if has replace
-		alias(buff,aliasfp);
+		alias(buff);
 
         if(endcheck(buff)) break;//exit and logout remember include <stdbool.h>
         
         prasing_space(buff,&argCnt,argList);
         
-        do_cmd(argCnt,argList);
+        do_cmd(argCnt,argList,aliasfp);
     }
     if(buff != NULL){
         free(buff);
