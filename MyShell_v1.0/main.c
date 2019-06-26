@@ -12,20 +12,31 @@
 //history and mouse
 #include<readline/readline.h>
 #include<readline/history.h>
-
+//test
 #define NORMAL 0 //build_in and execvp
 #define OUTREDIRECT 1 //with '>'
 #define INREDIRECT 2 //with '<'
 #define PIPED 3 //with '|'
 
 #define MAXDIRLENGTH 1024
-#define MAXCMDLENGTH 128
+#define MAXCMDLENGTH 256
+#define MAXARGLENGTH 128
+
+struct childcmd
+{
+    int childCnt;
+    char childArgs[MAXARGLENGTH][MAXCMDLENGTH];
+    char childNext[MAXARGLENGTH][MAXCMDLENGTH];
+    int piped;
+    int background;
+}child[MAXCMDLENGTH];
+
 
 void init_print()
 {
     int maxlen = MAXDIRLENGTH * sizeof(char);
     char* Nowdir = (char*) malloc(maxlen);
-    getcwd(NowdirP,maxlen);
+    getcwd(Nowdir,maxlen);
     printf("MyShell @ %s $",Nowdir);
     free(Nowdir);
 }
@@ -35,12 +46,8 @@ int get_input(char* buff)
     char* tmp;
     tmp = readline(" ");
     if(strlen(tmp)!=0){
-        add_history(tmp); // need to refactory for no '\n' cases
-        int i;int len = strlen(tmp);
-        char max[len+1];
-        for(i=0;i<len;i++) max[i] = tmp[i];
-        max[len] = '\n';
-        strcpy(buff,max);
+        add_history(tmp);
+        strcpy(buff,tmp);
         return 1;
     }
     else{
@@ -48,19 +55,171 @@ int get_input(char* buff)
     }
 }
 
-bool endcheck(char* buff) //need to refactory for no '\n' cases
+bool endcheck(char* buff)
 {
-    char* now = NULL;
-    int len = strlen(buff);
-    len--;
-    now = (char*) malloc(len * sizeof(char));
-    int i;
-    for(i=0;i<=len;i++){
-        now[i] = buff[i];
-        if(i==len) now[i] = '\0';
-    }
-    if(!strcmp(now,"exit")||!strcmp(now,"logout")) return true;
+    if(!strcmp(buff,"exit")||!strcmp(buff,"logout")) return true;
     return false;
+}
+
+void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
+{
+    int header = 0,tailer = 0;
+    int number = 0;
+    int len = strlen(buff);
+    while(true){
+        if(header >= len) break;
+        if(buff[header]==' ') header++;
+        else{
+            tailer = header;
+            number = 0;
+            while((buff[tailer]!=' ')&&(buff[tailer]!='\n')&&(tailer < len)){
+                number++;
+                tailer++;
+            }
+            int iter;
+            for(iter=0;iter<=number;iter++){
+                if(iter == number) argList[*argCnt][iter]='\0';
+                argList[*argCnt][iter] = buff[header+iter];
+            }
+            *argCnt = *argCnt + 1;
+            header = tailer;
+        }
+    }
+    return ;
+}
+
+int split_cmd(int argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
+{
+    int i;
+    int cnt = 0;
+    int lastCnt = 0;
+    //struct childcmd child[MAXCMDLENGTH];
+    char* arg[argCnt+1];
+    for(i=0;i<=argCnt;i++){
+        if(i==argCnt) arg[i]=NULL;
+        else{
+            arg[i] = (char*) argList[i];
+        }
+    }
+    
+    //for(i=0;i<argCnt;i++) printf("argList[%d]=%s\n",i,arg[i]);
+    for(i=0;i<=argCnt;i++){
+        if(i == argCnt){
+            int j;
+            if((i-lastCnt)==0) break;
+            child[cnt].childCnt = i - lastCnt;
+            child[cnt].background = 0;
+            for(j=0;j< i-lastCnt;j++){
+                memset(child[cnt].childList[j],'\0',sizeof(child[cnt].childList[j]));
+                strcpy(child[cnt].childList[j],arg[lastCnt+j]);
+            }
+            cnt++;
+            break;
+        }
+        if(strncmp(arg[i],"&",1)==0){
+            int j,num;
+            num = i - lastCnt;
+            if(num==0){
+                lastCnt = i+1;
+                continue;
+            }
+            child[cnt].childCnt = num;
+            child[cnt].background = 1;
+            for(j=0;j<num;j++){
+                memset(child[cnt].childList[j],'\0',sizeof(child[cnt].childList[j]));
+                strcpy(child[cnt].childList[j],arg[lastCnt+j]);
+            }
+            lastCnt = i+1;
+            cnt++;
+            continue;
+        }
+    }
+    return cnt;
+    //debug
+    // for(i=0;i<cnt;i++){
+    //     printf("This is child[%d] with\n",i);
+    //     printf("childCnt = %d\n",child[i].childCnt);
+    //     for(lastCnt=0;lastCnt<child[i].childCnt;lastCnt++){
+    //         printf("childList[%d]=%s\n",lastCnt,child[i].childList[lastCnt]);
+    //     }
+    //     printf("background=%d\n",child[i].background);
+    //     puts("");
+    // }
+
+}
+
+void cmd_control(int childCnt,struct childcmd* child)
+{
+    int i;
+    int error=0;
+    for(i=0;i<childCnt;i++){
+        int argcnt;
+        int piped=0;
+        int inredir=0;
+        int outredir=0;
+        int status;
+        int fd;
+        int j=0;
+        argcnt = child[i].childCnt;
+        char* arg[argcnt+1];
+        char* argnext[argcnt+1];
+        char* outfile;
+        char* infile;
+        for(j=0;j<argcnt;j++){
+            arg[j] = (char*) child[i].childList[j]; 
+        }
+        arg[argcnt] = NULL;
+        for(j=0;arg[j]!=NULL;j++){
+            if(strcmp(arg[j],">")==0){
+                outredir = j;
+                if(arg[j+1]==NULL) error=1;
+                if(outredir!=0) error=1;
+            }
+            if(strcmp(arg[j],"<")==0){
+                inredir = j;
+                if(j==0) error=1;
+                if(inredir!=0) error=1;
+            }
+            if(strcmp(arg[j],"|")==0){
+                piped = j;
+                if(piped!=0) error=1;
+                if(j==0) error=1;
+                if(arg[j+1]==NULL) error=1;
+            }
+            if(error) break;
+        }
+        if(error){
+            printf("Wrong Command!\n");
+            break;
+        }
+        // if(outredir != 0){
+        //     outfile = arg[outredir+1];
+        //     arg[outredir] = NULL;
+        // }
+        // if(inredir != 0){
+        //     infile = arg[inredir+1];
+        //     arg[inredir] = NULL;
+        // }
+        if(piped != 0){
+            arg[piped] = NULL;
+            for(j=piped+1;j<argcnt;j++){
+                argnext[j-piped-1] = arg[j];
+            }
+            argnext[argcnt-piped-1] = NULL;
+        }else{
+            
+        }
+        // if((pid = fork()) < 0){
+        //     printf("fork error!");
+        //     return ;
+        // }
+        // Child Pid exec into 
+        if(piped){
+            //do_piped(char* arg[],char* argnext[])
+            //exec piped cmd
+        }
+        
+    }
 }
 
 int main(int argc,char** argv)
@@ -68,8 +227,8 @@ int main(int argc,char** argv)
     int buflen = MAXCMDLENGTH * sizeof(char);
     int InputNULLFlag,i;
     int argCnt = 0;
-    char argList[MAXCMDLENGTH][MAXCMDLENGTH];
-    char** arg = NULL;
+    int childCnt = 0;
+    char argList[MAXARGLENGTH][MAXCMDLENGTH];
     char* buff = (char*)malloc(buflen);
     if(buff == NULL){
         perror("Buffer Malloc Failed ERROR!");
@@ -80,13 +239,25 @@ int main(int argc,char** argv)
     while(true)
     {
         memset(buff,0,buflen);
+        for(argCnt = 0;argCnt<MAXARGLENGTH;argCnt++){
+            argList[argCnt][0] = '\0';
+        }
+        argCnt = 0;
         init_print();
 
         InputNULLFlag = get_input(buff);
         if(!InputNULLFlag) continue;//while input is NULL continue
         
         if(endcheck(buff)) break;//exit and logout remember include <stdbool.h>
+        
+        prasing_space(buff,&argCnt,argList);
+        //now argCnt shows how many args in the command
+        //now argList[i] with %s shows what args is
+        //puts(buff);//debug
 
+        childCnt = split_cmd(argCnt,argList);
+        //do_cmd(childCnt,child);
+        cmd_control(childCnt,child);
     }
     return 0;
 }

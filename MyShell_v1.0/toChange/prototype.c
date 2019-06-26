@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 		}
 		argcount = 0;
 		explain_input(buf, &argcount, arglist);
+
 		do_cmd(argcount, arglist);
 	}
 
@@ -163,6 +164,10 @@ void do_cmd(int argcount, char arglist[100][256])
 	}
 	arg[argcount] = NULL;
 
+    for(i=0;arg[i]!=NULL;i++){
+        printf("arg[%d]=%s\n",i,arg[i]);
+    }
+
 	/*查看命令行是否有后台运行符*/
 	for (i=0; i < argcount; i++) {
 		if (strncmp(arg[i], "&",1) == 0) {
@@ -172,7 +177,7 @@ void do_cmd(int argcount, char arglist[100][256])
 				break;
 			}
 			else {
-				printf("wrong command\n");
+				printf("wrong command错误指令\n");
 				return ;
 			}
 		}
