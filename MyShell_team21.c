@@ -9,20 +9,19 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <stdbool.h>
-//history and mouse
 #include<readline/readline.h>
-#include<readline/history.h>
-//test
+#include<readline/history.h>	//用于实现输入光标操作和history
+
 #define NORMAL 0 //build_in and execvp
 #define OUTREDIRECT 1 //with '>'
 #define INREDIRECT 2 //with '<'
 #define PIPED 3 //with '|'
 
-#define MAXDIRLENGTH 1024
-#define MAXCMDLENGTH 256
-#define MAXARGLENGTH 128
+#define MAXDIRLENGTH 1024	//最大目录长度
+#define MAXCMDLENGTH 256	//最大指令总长度
+#define MAXARGLENGTH 128	//最大指令选项长度
 
-void init_print()
+void init_print()	//初始化输出，即当前Dir
 {
     int maxlen = MAXDIRLENGTH * sizeof(char);
     char* Nowdir = (char*) malloc(maxlen);
@@ -31,7 +30,7 @@ void init_print()
     free(Nowdir);
 }
 
-int get_input(char* buff)
+int get_input(char* buff)	//通过Readline库将stdin的输入读入buff缓冲区
 {
     char* tmp;
     tmp = readline(" ");
@@ -45,15 +44,15 @@ int get_input(char* buff)
     }
 }
 
-bool endcheck(char* buff)
+bool endcheck(char* buff)	//结束标记，当输入为exit、logout时退出进程
 {
     if(!strcmp(buff,"exit")||!strcmp(buff,"logout")) return true;
     return false;
 }
 
 void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLENGTH])
-{
-	int packflag = 0;
+{	//选项分割函数，将buff缓冲区中存储的某条指令通过空格划分出argCnt和argList
+	int packflag = 0;//针对alias指令，出现的'字符区域内属于同一条指令，不需要用空格分隔
     int header = 0,tailer = 0;
     int number = 0;
     int len = strlen(buff);
@@ -92,20 +91,19 @@ void prasing_space(char* buff, int* argCnt, char argList[MAXARGLENGTH][MAXCMDLEN
             header = tailer;
         }
     }
-	// for(number=0;number<*argCnt;number++){
-	// 	printf("argList[%d]=",number);
-	// 	puts(argList[number]);
-	// }
-	// puts(" ");
     return ;
 }
 
-void killfun(int sig){
+//do_cmd中对于built_in指令kill的具体操作，主要功能是在系统向子进程发送KILLSIG后让父进程接收到子进程被kill的信号
+//子进程对应父进程收到系统发送的子进程被kill信号后回收子进程PCB，避免僵尸进程的出现
+void killfun(int sig)
+{	
 	int status;
 	wait(&status);
 	return;
 }
 
+//对于空格分隔后的argCnt和argList进行具体指令操作
 void do_cmd(int argcount, char arglist[100][256])
 {
 	int	flag = 0;
@@ -212,7 +210,6 @@ void do_cmd(int argcount, char arglist[100][256])
 			/* pid为0说明是子进程，在子进程中执行输入的命令 */
 			/* 输入的命令中不含>、<和| */
 			if (pid == 0) {
-				//printf("debug:\n%s",arg[0]);
 				if(strcmp(arg[0],"help")==0 || strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0 || strcmp(arg[0],"history")==0){
 					exit(0);
 				}
@@ -227,7 +224,6 @@ void do_cmd(int argcount, char arglist[100][256])
 			{
 				//check arg[0] == alias or unalias
 				if(strcmp(arg[0],"alias")==0){
-				//	puts("alias");
 					char cmd[MAXCMDLENGTH];
 					char full[MAXCMDLENGTH];
 					char aliasbuff[MAXDIRLENGTH];
@@ -236,21 +232,13 @@ void do_cmd(int argcount, char arglist[100][256])
 					memset(full,'\0',sizeof(full));
 					int cnt;
 					for(cnt=0;arg[cnt]!=NULL;cnt++){
-						// printf("arg[%d]=",cnt);
-						// puts(arg[cnt]);
 					}
 					if(cnt == 1){//alias
 						char* aliaspath = "/tmp/aliasfile";
 						FILE* fp = fopen(aliaspath,"r");
 						int i;
-						// puts("init print");
-						// for(i=0;i<strlen(aliasbuff);i++){
-						// 	printf("%d ",aliasbuff[i]);
-						// }
-						// puts("init print end");
 						fgets(aliasbuff,MAXDIRLENGTH,fp);
 						while(!feof(fp)){
-							//printf("%s with len=%d\n",aliasbuff,sizeof(aliasbuff));
 							for(i=0;i<sizeof(aliasbuff);i++){
 								if(aliasbuff[i]=='\t'){
 									aliasbuff[i]='=';
@@ -434,6 +422,7 @@ void do_cmd(int argcount, char arglist[100][256])
 					printf("echo:\t\tPrint Out Message\n");
 					printf("cat:\t\tPrint File To Screen\n");
 					printf("vi:\t\tUse VIM\n");
+					printf("help:\t\tShow Help\n");
 					printf("cal:\t\tShow Calender\n");
 					printf("find:\t\tFind File\n");
 					printf("more:\t\tPrint File To Screen Page By Page\n");
