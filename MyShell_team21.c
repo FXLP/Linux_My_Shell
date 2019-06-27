@@ -213,6 +213,14 @@ void do_cmd(int argcount, char arglist[100][256])
 				if(strcmp(arg[0],"help")==0 || strcmp(arg[0],"alias")==0 || strcmp(arg[0],"unalias")==0 || strcmp(arg[0],"history")==0){
 					exit(0);
 				}
+				if(strcmp(arg[0],"echo")==0){
+					if(arg[1]!=NULL){
+						char first = arg[1][0];
+						if(first == '$'){
+							exit(0);
+						}
+					}
+				}
 				if ( !(find_command(arg[0])) ) {
 					printf("%s : command not found\n", arg[0]);
 					exit(0);
@@ -222,6 +230,22 @@ void do_cmd(int argcount, char arglist[100][256])
 			}
 			else//built_in cmd
 			{
+				//echo $NAME
+				if(strcmp(arg[0],"echo")==0){
+					if(arg[1]!=NULL && arg[2]==NULL && arg[1][0]=='$'){
+						int len = strlen(arg[1]);
+						char toGet[len];
+						strcpy(toGet,arg[1]+1);
+						if(getenv(toGet)==NULL){
+							printf("No such env as %s\n",toGet);
+						}
+						else{
+							printf("%s=%s\n",toGet,getenv(toGet));
+						}
+					}else{
+						printf("Wrong echo command usage!");
+					}
+				}
 				//check arg[0] == alias or unalias
 				if(strcmp(arg[0],"alias")==0){
 					char cmd[MAXCMDLENGTH];
